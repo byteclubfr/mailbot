@@ -8,6 +8,12 @@ const address = require('address-rfc2822')
 const stripTags = require('./striptags')
 
 
+const MATCH_CID = /<img .*?src=["']?cid:(.+?)(<|>|\n|"|'|\s|$).*?>/gi
+const REPLACE_CID = '{[CID($1)]}'
+const MATCH_CID_TOKENS = /\{\[CID\(.*?\)\]\}/gi
+const CID_TOKEN_PREFIX_LEN = REPLACE_CID.indexOf('$1')
+const CID_TOKEN_SUFFIX_LEN = REPLACE_CID.length - CID_TOKEN_PREFIX_LEN - 2
+
 const createBot = (conf = {}) => {
 	conf = Object.assign({
 		imap: Object.assign({
@@ -32,6 +38,7 @@ const createBot = (conf = {}) => {
 		autoReconnectTimeout: 5000,
 		streamAttachments: true,
 		removeTextSignature: true,
+		ignoreAttachmentsInSignature: true,
 	}, conf)
 
 	const handleError = context => error => {
@@ -48,7 +55,7 @@ const createBot = (conf = {}) => {
 		.catch(handleError('MAIL'))
 	}
 
-	// Reformat mail: extract text signature…
+	// Reformat mail: ignore images embedded in signature, extract text signature, etc…
 	const formatMail = mail => {
 		// Extract text signature
 		if (conf.removeTextSignature && mail.text) {
@@ -56,9 +63,34 @@ const createBot = (conf = {}) => {
 			mail.textOriginal = mail.text
 			mail.textSignature = extract.signature
 			mail.text = extract.text
+			debug('Extracted text signature')
 		} else {
 			mail.textOriginal = null
 			mail.textSignature = null
+		}
+		// Ignore attachments embedded in signature
+		mail.ignoredAttachments = []
+		if (conf.ignoreAttachmentsInSignature && mail.html && mail.attachments) {
+			// Replace IMG tags with CID by a token to not lose them when stripping tags
+			const html = mail.html.replace(MATCH_CID, REPLACE_CID)
+			const text = stripTags(html)
+			const extract = extractSignature(text)
+			if (extract && extract.signature) {
+				// Extract CID tokens from signature
+				const found = extract.signature.match(MATCH_CID_TOKENS) || []
+				const cids = found.map(token => token.substring(CID_TOKEN_PREFIX_LEN, token.length - CID_TOKEN_SUFFIX_LEN))
+				const { kept, ignored } = mail.attachments.reduce((result, attachment) => {
+					if (attachment.contentId && cids.includes(attachment.contentId)) {
+						result.ignored.push(attachment)
+					} else {
+						result.kept.push(attachment)
+					}
+					return result
+				}, { ignored: [], kept: [] })
+				debug('Ignored attachments in HTML signature:', ignored.length)
+				mail.attachments = kept
+				mail.ignoredAttachments = ignored
+			}
 		}
 	}
 
