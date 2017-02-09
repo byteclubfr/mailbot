@@ -48,58 +48,67 @@ const createBot = (conf = {}) => {
 	// Internal date of the latest received mail
 	let latestDate = null
 
-	// Open mailbox
-	client.once('ready', () => {
-		debug('IMAP ready')
-		client.openBoxP(conf.mailbox, false)
-		.then(() => {
-			debug('Mailbox open')
-			return client.searchP(conf.filter)
-		})
-		.then(uids => {
-			debug('Initial search', uids)
-			watch()
-			return uids
-		})
-		.then(fetchAndParse)
-		.catch(handleError('INITIAL_SEARCH'))
-	})
+	// Current client:
+	// We replace the instance whenever connection info change
+	let client = null
+	let shouldRecreateClient = false
 
-	const watch = () => client.on('mail', nb => {
-		debug('New mail', nb)
-		client.searchP(conf.filter.concat(['SINCE', latestDate]))
-		.then(uids => {
-			debug('Incremental search', uids)
-			return uids
-		})
-		.then(fetchAndParse)
-		.catch(handleError('INCREMENTAL_SEARCH'))
-	})
+	const initClient = () => {
 
-	client.on('close', err => {
-		debug('IMAP disconnected', err)
-		if (err && conf.autoReconnect) {
-			debug('Trying to reconnect…')
-			setTimeout(() => client.connect(), conf.autoReconnectTimeout)
-		} else {
-			debug('No reconnection (user close or no autoReconnect)')
+		// Open mailbox
+		client.once('ready', () => {
+			debug('IMAP ready')
+			client.openBoxP(conf.mailbox, false)
+			.then(() => {
+				debug('Mailbox open')
+				return client.searchP(conf.filter)
+			})
+			.then(uids => {
+				debug('Initial search', uids)
+				watch()
+				return uids
+			})
+			.then(fetchAndParse)
+			.catch(handleError('INITIAL_SEARCH'))
+		})
+
+		const watch = () => client.on('mail', nb => {
+			debug('New mail', nb)
+			client.searchP(conf.filter.concat(['SINCE', latestDate]))
+			.then(uids => {
+				debug('Incremental search', uids)
+				return uids
+			})
+			.then(fetchAndParse)
+			.catch(handleError('INCREMENTAL_SEARCH'))
+		})
+
+		client.on('close', err => {
+			debug('IMAP disconnected', err)
+			if (err && conf.autoReconnect) {
+				debug('Trying to reconnect…')
+				setTimeout(() => client.connect(), conf.autoReconnectTimeout)
+			} else {
+				debug('No reconnection (user close or no autoReconnect)')
+			}
+		})
+
+		client.on('error', handleError('IMAP_ERROR'))
+
+		const fetchAndParse = source => {
+			debug('Fetch', source)
+			const fetcher = client.fetch(source, {
+				bodies: '',
+				struct: true,
+				markSeen: conf.markSeen,
+			})
+			fetcher.on('message', parseMessage)
+			return new Promise((resolve, reject) => {
+				fetcher.on('end', resolve)
+				fetcher.on('error', reject)
+			})
 		}
-	})
 
-	client.on('error', handleError('IMAP_ERROR'))
-
-	const fetchAndParse = source => {
-		debug('Fetch', source)
-		const fetcher = client.fetch(source, {
-			bodies: '',
-			struct: true,
-			markSeen: conf.markSeen,
-		})
-		fetcher.on('message', parseMessage)
-		return new Promise((resolve, reject) => {
-			fetcher.on('end', resolve)
-			fetcher.on('error', reject)
-		})
 	}
 
 	const parseMessage = message => {
@@ -169,7 +178,10 @@ const createBot = (conf = {}) => {
 
 		start () {
 			debug('Connecting…')
-			client = imap(conf.imap) // Create new client to handle restart when 'imap' content changes
+			if (!client || shouldRecreateClient) {
+				client = imap(conf.imap)
+			}
+			initClient()
 			client.connect()
 			return new Promise((resolve, reject) => {
 				const onReady = () => {
@@ -216,6 +228,7 @@ const createBot = (conf = {}) => {
 		configure (option, value, autoRestart = true, destroy = false) {
 			conf[option] = value
 			if (autoRestart && (option === 'imap' || option === 'mailbox' || option === 'filter')) {
+				shouldRecreateClient = true
 				return this.restart(destroy)
 			}
 			return Promise.resolve()
