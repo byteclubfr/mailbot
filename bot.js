@@ -29,6 +29,7 @@ const createBot = (conf = {}) => {
 		errorHandler: (error, context) => console.error('MailBot Error', context, error), // eslint-disable-line no-console
 		autoReconnect: true,
 		autoReconnectTimeout: 5000,
+		streamAttachments: true,
 	}, conf)
 
 	const handleError = context => error => {
@@ -106,7 +107,7 @@ const createBot = (conf = {}) => {
 
 		const parser = new MailParser({
 			debug: conf.debugMailParser,
-			streamAttachments: true,
+			streamAttachments: conf.streamAttachments,
 			showAttachmentLinks: true,
 		})
 
