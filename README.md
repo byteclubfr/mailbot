@@ -119,7 +119,11 @@ autoReconnectTimeout: 5000,
 // false: attachments contents will be directly accessible as Buffer in 'content' property
 // true: attachments will be streamed via 'stream' property
 // Note: you can safely set it to false if you use triggerOnHeaders, otherwise you should work with streams
-streamAttachments: true
+streamAttachments: true,
+
+// If true, mail.text will not contain signature
+// Properties 'textSignature' and 'textOriginal' will be added
+removeTextSignature: true,
 }
 ```
 

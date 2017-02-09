@@ -31,6 +31,7 @@ const createBot = (conf = {}) => {
 		autoReconnect: true,
 		autoReconnectTimeout: 5000,
 		streamAttachments: true,
+		removeTextSignature: true,
 	}, conf)
 
 	const handleError = context => error => {
@@ -42,8 +43,23 @@ const createBot = (conf = {}) => {
 
 	const handleMail = (mail, triggerResult) => {
 		Promise.resolve()
+		.then(() => formatMail(mail))
 		.then(() => conf.mailHandler(mail, triggerResult))
 		.catch(handleError('MAIL'))
+	}
+
+	// Reformat mail: extract text signature…
+	const formatMail = mail => {
+		// Extract text signature
+		if (conf.removeTextSignature && mail.text) {
+			const extract = extractSignature(mail.text)
+			mail.textOriginal = mail.text
+			mail.textSignature = extract.signature
+			mail.text = extract.text
+		} else {
+			mail.textOriginal = null
+			mail.textSignature = null
+		}
 	}
 
 	// Do not fetch same mail multiple times to properly handle incoming emails
