@@ -43,10 +43,10 @@ const createBot = (conf = {}) => {
 		cleanSubject: true,
 	}, conf)
 
-	const handleError = context => error => {
+	const handleError = (context, mail) => error => {
 		debug('Error', context, error)
 		Promise.resolve()
-		.then(() => conf.errorHandler(error, context))
+		.then(() => conf.errorHandler(error, context, mail))
 		.catch(err => console.error('MAILBOT: ErrorHandler Error!', context, err)) // eslint-disable-line no-console
 	}
 
@@ -54,7 +54,7 @@ const createBot = (conf = {}) => {
 		Promise.resolve()
 		.then(() => formatMail(mail))
 		.then(() => conf.mailHandler(mail, triggerResult))
-		.catch(handleError('MAIL'))
+		.catch(handleError('MAIL', mail))
 	}
 
 	// Reformat mail: ignore images embedded in signature, extract text signature, etc…
@@ -221,7 +221,7 @@ const createBot = (conf = {}) => {
 					handleMail(mail, result)
 				}
 			})
-			.catch(handleError('TRIGGER'))
+			.catch(handleError('TRIGGER', mail))
 		})
 
 		// Stream mail once ready

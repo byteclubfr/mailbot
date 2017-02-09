@@ -103,13 +103,18 @@ mailHandler (mail, trigger) {
 // The error handler, called for each error occurring during processes
 // As there may be error thrown from very different places,
 // the function is called with a "context", which can be one of:
-// - MAIL
-// - INITIAL_SEARCH
-// - INCREMENTAL_SEARCH
-// - IMAP_ERROR
-// - TRIGGER
-errorHandler (error, context) {
+// - 'IMAP_ERROR': global error
+// - 'INITIAL_SEARCH': initial search for mails when starting bot
+// - 'INCREMENTAL_SEARCH': search executed on incoming mail
+// - 'TRIGGER': when trying to calculate trigger result (*)
+// - 'MAIL': when trying to handle mail (*)
+// (*) in those cases the third parameter will be a complete mail object
+// allowing you to access sender, subject, etc…
+errorHandler (error, context, mail) {
 	console.error(context, error)
+	if (mail) {
+		sendErrorMailTo(mail.from)
+	}
 },
 
 // IMAP client reconnection
