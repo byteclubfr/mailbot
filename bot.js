@@ -13,6 +13,7 @@ const REPLACE_CID = '{[CID($1)]}'
 const MATCH_CID_TOKENS = /\{\[CID\(.*?\)\]\}/gi
 const CID_TOKEN_PREFIX_LEN = REPLACE_CID.indexOf('$1')
 const CID_TOKEN_SUFFIX_LEN = REPLACE_CID.length - CID_TOKEN_PREFIX_LEN - 2
+const RE_SUBJECT_PREFIX = /^(?:(?:R[eé]f?|Fwd|Forward)[:\.]\s*)* /i
 
 const createBot = (conf = {}) => {
 	conf = Object.assign({
@@ -39,6 +40,7 @@ const createBot = (conf = {}) => {
 		streamAttachments: true,
 		removeTextSignature: true,
 		ignoreAttachmentsInSignature: true,
+		cleanSubject: true,
 	}, conf)
 
 	const handleError = context => error => {
@@ -91,6 +93,12 @@ const createBot = (conf = {}) => {
 				mail.attachments = kept
 				mail.ignoredAttachments = ignored
 			}
+		}
+		// Cleanup subject
+		if (conf.cleanSubject) {
+			mail.cleanSubject = mail.subject.replace(RE_SUBJECT_PREFIX, '')
+		} else {
+			mail.cleanSubject = null
 		}
 	}
 

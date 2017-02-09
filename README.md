@@ -128,6 +128,10 @@ removeTextSignature: true,
 // If true, if embedded images are found in signature of mail.html
 // they will be dropped from 'attachments' and moved to 'ignoredAttachments'
 ignoreAttachmentsInSignature: true,
+
+// If true, property 'cleanSubject' will contain the subject without all messy prefixes
+cleanSubject: true,
+
 }
 ```
 
@@ -140,6 +144,7 @@ Following custom properties are added:
 * ignoredAttachments
 * textSignature
 * textOriginal
+* cleanSubject
 
 ### Helpers
 
