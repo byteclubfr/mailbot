@@ -7,23 +7,40 @@ const debug = require('debug')('mailbot')
 const address = require('address-rfc2822')
 
 
-const noop = () => {}
-
-const createBot = (conf) => {
-	let client = imap(conf.imap)
+const createBot = (conf = {}) => {
+	conf = Object.assign({
+		imap: Object.assign({
+			// user,
+			// password,
+			host: 'imap.googlemail.com',
+			port: 993,
+			keepalive: true,
+			tls: true,
+			tlsOptions: {
+				rejectUnauthorized: false,
+			},
+		}, conf.imap),
+		mailbox: 'INBOX',
+		filter: ['UNSEEN'],
+		markSeen: true,
+		triggerOnHeaders: false,
+		trigger: mail => false, // eslint-disable-line no-unused-vars
+		mailHandler: (mail, trigger) => {}, // eslint-disable-line no-unused-vars
+		errorHandler: (error, context) => console.error('MailBot Error', context, error), // eslint-disable-line no-console
+		autoReconnect: true,
+		autoReconnectTimeout: 5000,
+	}, conf)
 
 	const handleError = context => error => {
 		debug('Error', context, error)
-		const fn = conf.errorHandler || noop
 		Promise.resolve()
-		.then(() => fn(error, context))
+		.then(() => conf.errorHandler(error, context))
 		.catch(err => console.error('MAILBOT: ErrorHandler Error!', context, err)) // eslint-disable-line no-console
 	}
 
 	const handleMail = (mail, triggerResult) => {
-		const fn = conf.mailHandler || noop
 		Promise.resolve()
-		.then(() => fn(mail, triggerResult))
+		.then(() => conf.mailHandler(mail, triggerResult))
 		.catch(handleError('MAIL'))
 	}
 
