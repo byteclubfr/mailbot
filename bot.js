@@ -241,7 +241,7 @@ const createBot = (conf = {}) => {
 
 // Helper: extract signature from text body
 
-const extractSignature = (text) => talon.signature.bruteforce.extractSignature(text)
+const extractSignature = text => talon.signature.bruteforce.extractSignature(text)
 
 
 // Helper: parse addresses (needed when working with triggerOnHeaders)
