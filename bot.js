@@ -45,8 +45,8 @@ const createBot = (conf = {}) => {
 		.catch(handleError('MAIL'))
 	}
 
-	// Internal date of the latest received mail
-	let latestDate = null
+	// Do not fetch same mail multiple times to properly handle incoming emails
+	let doneUids = []
 
 	// Current client:
 	// We replace the instance whenever connection info change
@@ -74,10 +74,11 @@ const createBot = (conf = {}) => {
 
 		const watch = () => client.on('mail', nb => {
 			debug('New mail', nb)
-			client.searchP(conf.filter.concat(['SINCE', latestDate]))
+			client.searchP(conf.filter)
 			.then(uids => {
-				debug('Incremental search', uids)
-				return uids
+				const newUids = uids.filter(uid => !doneUids.includes(uid))
+				debug('Incremental search', newUids)
+				return newUids
 			})
 			.then(fetchAndParse)
 			.catch(handleError('INCREMENTAL_SEARCH'))
@@ -111,7 +112,7 @@ const createBot = (conf = {}) => {
 
 	}
 
-	const parseMessage = message => {
+	const parseMessage = (message, uid) => {
 		debug('Parse message')
 
 		const parser = new MailParser({
@@ -144,11 +145,6 @@ const createBot = (conf = {}) => {
 
 		// Once mail is ready and parsed…
 		parser.on('end', mail => {
-			// …keep track of latest mail received…
-			const date = new Date(mail.receivedDate)
-			if (date > latestDate) {
-				latestDate = date
-			}
 			// …check if it should trigger handler…
 			if (!conf.triggerOnHeaders) {
 				triggerResult = Promise.resolve().then(() => conf.trigger(mail))
@@ -162,7 +158,12 @@ const createBot = (conf = {}) => {
 			}
 			// …and handle it if applicable
 			triggerResult
-			.then(result => result && handleMail(mail, result))
+			.then(result => {
+				doneUids.push(uid)
+				if (result) {
+					handleMail(mail, result)
+				}
+			})
 			.catch(handleError('TRIGGER'))
 		})
 
