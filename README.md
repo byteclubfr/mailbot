@@ -191,3 +191,9 @@ This module uses `debug` internally, and you can enable internal debug messages 
 ```sh
 env DEBUG=mailbot node mybot.js
 ```
+
+## Full sample
+
+See `sample.js` in repository: it's a mail bot which will react on every mail which subject starts with 'upload to …'. It will fetch all attachments and save it to `<upload dir>/<sender address>/<requested path>`.
+
+This illustrates how you can easily create that type of bot.
