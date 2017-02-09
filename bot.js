@@ -5,6 +5,7 @@ const { MailParser } = require('mailparser') // Requires 0.x as 2.x will fail li
 const talon = require('talon')
 const debug = require('debug')('mailbot')
 const address = require('address-rfc2822')
+const stripTags = require('./striptags')
 
 
 const createBot = (conf = {}) => {
@@ -283,7 +284,13 @@ const _parseAddressValue = (value, quiet = false) => {
 // Public API
 
 module.exports = {
+
+	// Main function
 	createBot,
+
+	// Helpers
 	parseAddresses,
 	extractSignature,
+	stripTags,
+
 }

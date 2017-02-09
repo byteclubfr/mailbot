@@ -152,6 +152,14 @@ This function will help you remove signature from e-mail body, using `talon`:
 const { text, signature } = extractSignature(mail.text)
 ```
 
+#### Strip HTML tags
+
+This function will remove any HTML tag from a string, using `striptags` internally:
+
+```js
+const text = stripTags(mail.html)
+```
+
 ### Debugging
 
 This module uses `debug` internally, and you can enable internal debug messages adding `mailbot` to your environment variable `DEBUG`:
