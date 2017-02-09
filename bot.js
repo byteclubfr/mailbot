@@ -207,9 +207,9 @@ const createBot = (conf = {}) => {
 				triggerResult = Promise.resolve().then(() => conf.trigger(mail))
 				triggerResult.then(result => {
 					if (result) {
-						debug('Triggered (on end)', { result, subject: message.headers.subject })
+						debug('Triggered (on end)', { result, subject: mail.subject })
 					} else {
-						debug('Not triggered (on end)', { result, subject: message.headers.subject })
+						debug('Not triggered (on end)', { result, subject: mail.subject })
 					}
 				})
 			}
