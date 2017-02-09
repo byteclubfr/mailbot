@@ -1,0 +1,32 @@
+{
+	"rules": {
+		"indent": [ 2, "tab" ],
+		"linebreak-style": [ 2, "unix" ],
+		"no-var": [ 2 ],
+		"quotes": [ 2, "single" ],
+		"semi": [ 2, "never" ],
+		"no-unused-vars": ["warn", { "var": "all" }],
+		"no-trailing-spaces": [ 2 ]
+	},
+	"env": {
+		"es6": true,
+		"node": true,
+		"browser": true
+	},
+	"parserOptions": {
+		"sourceType": "module",
+		"ecmaVersion": 7,
+		"ecmaFeatures": {
+			"arrowFunctions": true,
+			"blockBindings": true,
+			"classes": true,
+			"destructuring": true,
+			"experimentalObjectRestSpread": true,
+			"jsx": true,
+			"modules": true,
+			"objectLiteralShorthandMethods": true,
+			"spread": true
+		}
+	},
+	"extends": "eslint:recommended"
+}

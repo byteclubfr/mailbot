@@ -1,0 +1,37 @@
+{
+  "name": "mailbot",
+  "version": "1.0.0",
+  "description": "Mail Bot: IMAP client sorting and processing entering emails",
+  "main": "bot.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/byteclubfr/mailbot.git"
+  },
+  "keywords": [
+    "imap",
+    "bot",
+    "mail"
+  ],
+  "author": "Nicolas Chambrier <naholyr@gmail.com> (http://naholyr.fr/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/byteclubfr/mailbot/issues"
+  },
+  "homepage": "https://github.com/byteclubfr/mailbot#readme",
+  "dependencies": {
+    "address-rfc2822": "^1.0.1",
+    "debug": "^2.6.0",
+    "imap": "^0.8.19",
+    "mailparser": "^0.6.2",
+    "talon": "^2.3.2"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "proxyquire": "^1.7.11",
+    "sinon": "^1.17.7"
+  }
+}
