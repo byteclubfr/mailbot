@@ -1,11 +1,9 @@
 'use strict'
 
 const imap = require('./imap')
+const { parseAddresses, stripTags, extractSignature } = require('./helpers')
 const { MailParser } = require('mailparser') // Requires 0.x as 2.x will fail listing all attachments
-const talon = require('talon')
 const debug = require('debug')('mailbot')
-const address = require('address-rfc2822')
-const stripTags = require('./striptags')
 
 
 const MATCH_CID = /<img .*?src=["']?cid:(.+?)(<|>|\n|"|'|\s|$).*?>/gi
@@ -293,47 +291,6 @@ const createBot = (conf = {}) => {
 		},
 
 	}
-}
-
-
-// Helper: extract signature from text body
-
-const extractSignature = text => talon.signature.bruteforce.extractSignature(text)
-
-
-// Helper: parse addresses (needed when working with triggerOnHeaders)
-
-const parseAddresses = (headers, { quiet = false } = {}) => {
-	_parseAddressHeader(headers, 'to', quiet)
-	_parseAddressHeader(headers, 'cc', quiet)
-	_parseAddressHeader(headers, 'bcc', quiet)
-	return headers
-}
-
-const _parseAddressHeader = (headers, field, quiet = false) => {
-	let addresses = headers[field]
-	if (typeof addresses === 'string') {
-		addresses = [addresses]
-	} else if (!addresses) {
-		addresses = []
-	}
-	headers[field] = addresses.map(address => _parseAddressValue(address, quiet))
-}
-
-const _parseAddressValue = (value, quiet = false) => {
-	let parsed
-	try {
-		parsed = address.parse(value)[0]
-	} catch (err) {
-		debug('Error parsing address', value, err)
-		if (quiet) {
-			parsed = {}
-		} else {
-			throw err
-		}
-	}
-	parsed.raw = value
-	return parsed
 }
 
 
