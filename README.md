@@ -104,8 +104,7 @@ mailHandler (mail, trigger) {
 // As there may be error thrown from very different places,
 // the function is called with a "context", which can be one of:
 // - 'IMAP_ERROR': global error
-// - 'INITIAL_SEARCH': initial search for mails when starting bot
-// - 'INCREMENTAL_SEARCH': search executed on incoming mail
+// - 'SEARCH': failed searching or fetching mails
 // - 'TRIGGER': when trying to calculate trigger result (*)
 // - 'MAIL': when trying to handle mail (*)
 // (*) in those cases the third parameter will be a complete mail object

@@ -41,18 +41,26 @@ const createBot = (conf = {}) => {
 		cleanSubject: true,
 	}, conf)
 
-	const handleError = (context, mail) => error => {
+	const handleError = (context, mail, uid) => error => {
 		debug('Error', context, error)
+
+		if (uid) {
+			// Remove from 'doneUids'
+			doneUids = doneUids.filter(_uid => _uid !== uid)
+			// Note: we don't automatically retry later, it could be an option
+			// Instead, this mail will not be checked again unless marked as unread (depends on options and filters) and a new mail is received
+		}
+
 		Promise.resolve()
 		.then(() => conf.errorHandler(error, context, mail))
 		.catch(err => console.error('MAILBOT: ErrorHandler Error!', context, err)) // eslint-disable-line no-console
 	}
 
-	const handleMail = (mail, triggerResult) => {
+	const handleMail = (mail, triggerResult, uid) => {
 		Promise.resolve()
 		.then(() => formatMail(mail))
 		.then(() => conf.mailHandler(mail, triggerResult))
-		.catch(handleError('MAIL', mail))
+		.catch(handleError('MAIL', mail, uid))
 	}
 
 	// Reformat mail: ignore images embedded in signature, extract text signature, etc…
@@ -116,28 +124,29 @@ const createBot = (conf = {}) => {
 			client.openBoxP(conf.mailbox, false)
 			.then(() => {
 				debug('Mailbox open')
-				return client.searchP(conf.filter)
+				return search()
 			})
-			.then(uids => {
-				debug('Initial search', uids)
-				watch()
-				return uids
-			})
-			.then(fetchAndParse)
-			.catch(handleError('INITIAL_SEARCH'))
+			.then(watch, watch) // whatever happened
 		})
 
-		const watch = () => client.on('mail', nb => {
-			debug('New mail', nb)
-			client.searchP(conf.filter)
+		const watch = () => client.on('mail', search)
+
+		const search = nb => {
+			if (nb !== undefined) {
+				debug('New mail', nb)
+			}
+			return client.searchP(conf.filter)
 			.then(uids => {
 				const newUids = uids.filter(uid => !doneUids.includes(uid))
-				debug('Incremental search', newUids)
+				debug('Search', newUids)
+				// Optimistically mark uids as done, this prevents double-triggers if a mail
+				// is received while we're handling one and option 'markSeen' is not enabled
+				doneUids = uids
 				return newUids
 			})
 			.then(fetchAndParse)
-			.catch(handleError('INCREMENTAL_SEARCH'))
-		})
+			.catch(handleError('SEARCH'))
+		}
 
 		client.on('close', err => {
 			debug('IMAP disconnected', err)
@@ -213,13 +222,8 @@ const createBot = (conf = {}) => {
 			}
 			// …and handle it if applicable
 			triggerResult
-			.then(result => {
-				doneUids.push(uid)
-				if (result) {
-					handleMail(mail, result)
-				}
-			})
-			.catch(handleError('TRIGGER', mail))
+			.then(result => result && handleMail(mail, result, uid))
+			.catch(handleError('TRIGGER', mail, uid))
 		})
 
 		// Stream mail once ready
