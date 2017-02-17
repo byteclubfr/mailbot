@@ -207,6 +207,7 @@ const createBot = (conf = {}) => {
 					}
 					return result
 				})
+				.catch(() => {}) // Prevent unhandled rejection, it will be handled later catching triggerResult
 			})
 		}
 
@@ -222,6 +223,7 @@ const createBot = (conf = {}) => {
 						debug('Not triggered (on end)', { result, subject: mail.subject })
 					}
 				})
+				.catch(() => {}) // Prevent unhandled rejection, it will be handled later catching triggerResult
 			}
 			// …and handle it if applicable
 			triggerResult
