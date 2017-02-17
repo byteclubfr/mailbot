@@ -151,9 +151,6 @@ const createBot = (conf = {}) => {
 		const watch = () => client.on('mail', newMailSearch)
 
 		const search = () => {
-			if (nb !== undefined) {
-				debug('New mail', nb)
-			}
 			// Whenever it comes in the middle of a scheduled search, cancel it
 			clearTimeout(searchTimeout)
 			return client.searchP(conf.filter)
