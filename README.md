@@ -136,6 +136,11 @@ ignoreAttachmentsInSignature: true,
 // If true, property 'cleanSubject' will contain the subject without all messy prefixes
 cleanSubject: true,
 
+// Set to a strictly positive number to define period (milliseconds) between automatic search
+// Note that this delay starts AFTER a batch has been handled
+// Any falsey value will disable periodic search
+searchPeriod: false,
+
 }
 ```
 

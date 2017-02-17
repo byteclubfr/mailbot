@@ -39,7 +39,13 @@ const createBot = (conf = {}) => {
 		removeTextSignature: true,
 		ignoreAttachmentsInSignature: true,
 		cleanSubject: true,
+		searchPeriod: false, // falsey to disable, otherwise milliseconds period
 	}, conf)
+
+	// Timeout instance for planned periodic search
+	// Note that this is bot-wide and not client-wide
+	// as client can be re-set during bot's life
+	let searchTimeout = null
 
 	const handleError = (context, mail, uid) => error => {
 		debug('Error', context, error)
@@ -117,6 +123,9 @@ const createBot = (conf = {}) => {
 	let shouldRecreateClient = false
 
 	const initClient = () => {
+		// Interrupt and re-initialize any pending periodic search
+		clearTimeout(searchTimeout)
+		searchTimeout = null
 
 		// Open mailbox
 		client.once('ready', () => {
@@ -129,12 +138,24 @@ const createBot = (conf = {}) => {
 			.then(watch, watch) // whatever happened
 		})
 
-		const watch = () => client.on('mail', search)
+		const newMailSearch = nb => {
+			debug('New mail', nb)
+			search()
+		}
 
-		const search = nb => {
+		const periodicSearch = () => {
+			debug('Periodic search')
+			search()
+		}
+
+		const watch = () => client.on('mail', newMailSearch)
+
+		const search = () => {
 			if (nb !== undefined) {
 				debug('New mail', nb)
 			}
+			// Whenever it comes in the middle of a scheduled search, cancel it
+			clearTimeout(searchTimeout)
 			return client.searchP(conf.filter)
 			.then(uids => {
 				const newUids = uids.filter(uid => !doneUids.includes(uid))
@@ -146,6 +167,12 @@ const createBot = (conf = {}) => {
 			})
 			.then(fetchAndParse)
 			.catch(handleError('SEARCH'))
+			.then(() => {
+				// Finally, plan a new search if applicable
+				if (conf.searchPeriod) {
+					searchTimeout = setTimeout(periodicSearch, conf.searchPeriod)
+				}
+			})
 		}
 
 		client.on('close', err => {
