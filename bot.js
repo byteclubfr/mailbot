@@ -162,6 +162,9 @@ const createBot = (conf = {}) => {
 
 		const fetchAndParse = source => {
 			debug('Fetch', source)
+			if (source.length === 0) {
+				return Promise.resolve([])
+			}
 			const fetcher = client.fetch(source, {
 				bodies: '',
 				struct: true,
