@@ -35,6 +35,7 @@ const createBot = (conf = {}) => {
 		errorHandler: (error, context) => console.error('MailBot Error', context, error), // eslint-disable-line no-console
 		autoReconnect: true,
 		autoReconnectTimeout: 5000,
+		autoReconnectRecreateClient: false,
 		streamAttachments: true,
 		removeTextSignature: true,
 		ignoreAttachmentsInSignature: true,
@@ -176,6 +177,11 @@ const createBot = (conf = {}) => {
 			debug('IMAP disconnected', err)
 			if (err && conf.autoReconnect) {
 				debug('Trying to reconnect…')
+				if(conf.autoReconnectRecreateClient) {
+					debug('Recreate client')
+					client = imap(conf.imap)
+					initClient()
+				}
 				setTimeout(() => client.connect(), conf.autoReconnectTimeout)
 			} else {
 				debug('No reconnection (user close or no autoReconnect)')
